@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApiEmpresa: comparación de escaneos ZAP</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1c2430;
+    --muted: #5b6676;
+    --border: #dde1e8;
+    --accent: #1f5fbf;
+    --ok-bg: #e3f4e8;
+    --ok-text: #14683a;
+    --bad-bg: #fde8e6;
+    --bad-text: #a02a1f;
+    --warn-bg: #fff3d6;
+    --warn-text: #7a5400;
+    --info-bg: #e4edfb;
+    --info-text: #1d4a96;
+    --code-bg: #eef0f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161c;
+      --surface: #1b212a;
+      --text: #e6e9ee;
+      --muted: #9aa5b5;
+      --border: #2d3644;
+      --accent: #6aa3ff;
+      --ok-bg: #173a27;
+      --ok-text: #7fd9a2;
+      --bad-bg: #432019;
+      --bad-text: #ff9b8f;
+      --warn-bg: #3f3210;
+      --warn-text: #f1c867;
+      --info-bg: #17294a;
+      --info-text: #9bbcf5;
+      --code-bg: #242c38;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 16px 56px; }
+  h1 { font-size: 1.7rem; margin: 0 0 4px; }
+  h2 { font-size: 1.2rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1rem; margin: 22px 0 8px; }
+  p { margin: 8px 0; }
+  .sub { color: var(--muted); margin-bottom: 20px; }
+  .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0 8px; }
+  .meta div, .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .meta b { display: block; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .card h3 { margin-top: 0; }
+  .levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+  .levels div { border-radius: 8px; padding: 8px 4px; }
+  .levels .n { font-size: 1.6rem; font-weight: 700; display: block; line-height: 1.1; }
+  .levels .l { font-size: .75rem; }
+  .lv-alto { background: var(--bad-bg); color: var(--bad-text); }
+  .lv-medio { background: var(--warn-bg); color: var(--warn-text); }
+  .lv-bajo { background: #fbf6c9; color: #6b5d00; }
+  .lv-info { background: var(--info-bg); color: var(--info-text); }
+  @media (prefers-color-scheme: dark) { .lv-bajo { background: #3a3510; color: #ece08a; } }
+  .big-result { font-size: 1.05rem; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; font-size: .93rem; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+  th { background: var(--code-bg); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+  .tablewrap { overflow-x: auto; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+  .b-medio { background: var(--warn-bg); color: var(--warn-text); }
+  .b-bajo { background: #fbf6c9; color: #6b5d00; }
+  .b-info { background: var(--info-bg); color: var(--info-text); }
+  .b-ok { background: var(--ok-bg); color: var(--ok-text); }
+  .b-bad { background: var(--bad-bg); color: var(--bad-text); }
+  @media (prefers-color-scheme: dark) { .b-bajo { background: #3a3510; color: #ece08a; } }
+  code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; font-size: .88em; }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .note { background: var(--warn-bg); color: var(--warn-text); border-radius: 10px; padding: 12px 14px; margin: 14px 0; }
+  .okbox { background: var(--ok-bg); color: var(--ok-text); border-radius: 10px; padding: 12px 14px; margin: 14px 0; }
+  .muted { color: var(--muted); }
+  footer { margin-top: 44px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--border); padding-top: 14px; }
+  @media print {
+    body { background: #fff; color: #000; }
+    .wrap { padding: 0; }
+    h2 { break-after: avoid; }
+    table, .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>ApiEmpresa: comparación de escaneos de seguridad</h1>
+  <p class="sub">Resultados de OWASP ZAP antes y después de aplicar las correcciones.</p>
+
+  <div class="meta">
+    <div><b>Sitio</b>https://localhost:7262</div>
+    <div><b>Herramienta</b>ZAP 2.17.0 (política API)</div>
+    <div><b>Escaneo "antes"</b>12 oct 2026, 18:59</div>
+    <div><b>Escaneo "después"</b>12 oct 2026, 20:52</div>
+  </div>
+
+  <h2>1. Resumen</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Antes <span class="badge b-bad">4 tipos de alerta</span></h3>
+      <div class="levels">
+        <div class="lv-alto"><span class="n">0</span><span class="l">Alto</span></div>
+        <div class="lv-medio"><span class="n">1</span><span class="l">Medio</span></div>
+        <div class="lv-bajo"><span class="n">2</span><span class="l">Bajo</span></div>
+        <div class="lv-info"><span class="n">1</span><span class="l">Informativo</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Después <span class="badge b-ok">0 alertas</span></h3>
+      <div class="levels">
+        <div class="lv-alto"><span class="n">0</span><span class="l">Alto</span></div>
+        <div class="lv-medio"><span class="n">0</span><span class="l">Medio</span></div>
+        <div class="lv-bajo"><span class="n">0</span><span class="l">Bajo</span></div>
+        <div class="lv-info"><span class="n">0</span><span class="l">Informativo</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="big-result">Las 4 alertas del primer escaneo dejaron de aparecer en el segundo. Hay observaciones pendientes de revisar sobre la calidad del segundo escaneo (sección 5).</p>
+
+  <h2>2. Comparación por alerta</h2>
+  <div class="tablewrap">
+  <table>
+    <thead>
+      <tr><th>Alerta</th><th>Riesgo</th><th>Antes</th><th>Después</th><th>Corrección</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Format String Error<br><span class="muted">CWE-134 · plugin 30002</span></td>
+        <td><span class="badge b-medio">Medio</span></td>
+        <td>7 instancias</td>
+        <td><span class="badge b-ok">No aparece</span></td>
+        <td>Validación de entrada con <code>ClienteInputDto</code> y manejo global de errores</td>
+      </tr>
+      <tr>
+        <td>Falta X-Content-Type-Options<br><span class="muted">CWE-693 · plugin 10021</span></td>
+        <td><span class="badge b-bajo">Bajo</span></td>
+        <td>4 instancias</td>
+        <td><span class="badge b-ok">No aparece</span></td>
+        <td>Cabecera <code>nosniff</code> en todas las respuestas</td>
+      </tr>
+      <tr>
+        <td>Strict-Transport-Security no establecido<br><span class="muted">CWE-319 · plugin 10035</span></td>
+        <td><span class="badge b-bajo">Bajo</span></td>
+        <td>Sistémica (5 URL)</td>
+        <td><span class="badge b-ok">No aparece</span></td>
+        <td><code>UseHsts()</code>, activado en desarrollo solo con la bandera <code>EnableHstsForScan</code></td>
+      </tr>
+      <tr>
+        <td>Reexaminar directivas de Cache-Control<br><span class="muted">CWE-525 · plugin 10015</span></td>
+        <td><span class="badge b-info">Informativo</span></td>
+        <td>3 instancias</td>
+        <td><span class="badge b-ok">No aparece</span></td>
+        <td><code>Cache-Control: no-cache, no-store, must-revalidate</code> y <code>Pragma: no-cache</code></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>3. Detalle de lo encontrado antes</h2>
+
+  <h3>Format String Error (medio, 7 instancias)</h3>
+  <p>ZAP envió cadenas con marcadores de formato (<code>%n%s%n%s…</code> y <code>%1!s%2!s…</code>) en los campos del cuerpo y marcó una posible vulnerabilidad cuando el servidor cerró la conexión. En .NET este tipo de ataque no aplica de forma directa, y el informe no traía evidencia; lo más probable es que fueran errores 500 por datos que no cabían en las columnas de MySQL.</p>
+  <ul>
+    <li><code>POST /api/Clientes</code>: campo <code>cui</code></li>
+    <li><code>PUT /api/Clientes/10</code>: campos <code>apellidos</code>, <code>cui</code>, <code>direccion</code>, <code>nit</code>, <code>nombres</code> y <code>telefono</code></li>
+  </ul>
+
+  <h3>Falta X-Content-Type-Options (bajo, 4 instancias)</h3>
+  <ul>
+    <li><code>GET /api/Clientes</code></li>
+    <li><code>GET /api/Clientes/10</code></li>
+    <li><code>GET /openapi/v1.json</code></li>
+    <li><code>POST /api/Clientes</code></li>
+  </ul>
+
+  <h3>Strict-Transport-Security no establecido (bajo, sistémica)</h3>
+  <ul>
+    <li><code>GET /api/Clientes</code>, <code>GET /openapi/v1.json</code>, <code>POST /api/Clientes</code></li>
+    <li><code>GET /robots.txt</code> y <code>GET /sitemap.xml</code></li>
+  </ul>
+
+  <h3>Reexaminar Cache-Control (informativo, 3 instancias)</h3>
+  <ul>
+    <li><code>GET /api/Clientes</code>, <code>GET /api/Clientes/10</code>, <code>GET /openapi/v1.json</code></li>
+  </ul>
+
+  <h2>4. Estadísticas de los escaneos</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Métrica</th><th>Antes</th><th>Después</th></tr></thead>
+    <tbody>
+      <tr><td>Respuestas 2xx</td><td>21 %</td><td>33 %</td></tr>
+      <tr><td>Respuestas 4xx</td><td>56 %</td><td>99 %</td></tr>
+      <tr><td>Respuestas 5xx</td><td>37 %</td><td>No aparece en el informe</td></tr>
+      <tr><td>Fallos de red</td><td>No aparece</td><td>22 %</td></tr>
+      <tr><td>Endpoints totales</td><td>11</td><td>6</td></tr>
+      <tr><td>Endpoints con <code>application/json</code></td><td>45 %</td><td>33 %</td></tr>
+      <tr><td>Endpoints con <code>application/problem+json</code></td><td>No aparece</td><td>66 %</td></tr>
+      <tr><td>Respuestas lentas</td><td>2 %</td><td>2 %</td></tr>
+      <tr><td>Avisos y errores en <code>zap.log</code></td><td>4 avisos</td><td>1 aviso y 1 error</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="muted">Los porcentajes de dos escaneos distintos no son directamente comparables, porque dependen de cuántas peticiones envió cada uno.</p>
+  <p>El aumento de respuestas 4xx es esperable: las validaciones nuevas rechazan con 400 los datos de ataque (antes algunos llegaban a la base de datos y producían 500). La aparición de <code>application/problem+json</code> confirma que el manejo de errores nuevo está activo.</p>
+
+  <h2>5. Observaciones y límites</h2>
+  <div class="note">
+    <b>Pendiente de revisar:</b> el escaneo "después" registró un 22 % de fallos de red y un error en <code>zap.log</code>. Antes de dar el resultado por definitivo conviene comprobar que la API siguió activa durante todo el escaneo y que el escaneo activo llegó al 100 %. Si no fue así, hay que repetirlo.
+  </div>
+  <ul>
+    <li>Format String solo se detecta con el escaneo activo. Su ausencia en el segundo informe es una buena señal, pero depende de que ese escaneo se haya completado.</li>
+    <li>ZAP prueba solo lo que descubre desde afuera (los endpoints del OpenAPI). No revisa el código fuente, los secretos ni la lógica de negocio.</li>
+    <li>El informe "antes" original en HTML se sobrescribió al generar los informes siguientes (ZAP nombra los archivos solo con la fecha). Los datos de este documento sobre el "antes" se reconstruyeron a partir del contenido de ese primer informe.</li>
+  </ul>
+
+  <h2>6. Correcciones aplicadas</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Archivo</th><th>Cambio</th></tr></thead>
+    <tbody>
+      <tr><td><code>Models/ClienteInputDto.cs</code> (nuevo)</td><td>Datos de entrada de POST y PUT con longitudes máximas según las columnas de la base de datos y expresiones regulares que rechazan caracteres no permitidos. Los datos inválidos devuelven 400.</td></tr>
+      <tr><td><code>Controllers/ClientesController.cs</code></td><td>POST y PUT reciben el DTO en lugar de la entidad. El id sale de la URL.</td></tr>
+      <tr><td><code>Program.cs</code></td><td>Middleware de cabeceras de seguridad, <code>AddProblemDetails</code> y <code>UseExceptionHandler</code> para errores 500 genéricos, y <code>UseHsts</code>.</td></tr>
+      <tr><td><code>appsettings.Development.json</code></td><td>Bandera temporal <code>EnableHstsForScan</code> para que HSTS se envíe en localhost durante el escaneo (debe volver a <code>false</code> después).</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>7. Recomendaciones pendientes</h2>
+  <ul>
+    <li><b>Autenticación y autorización:</b> la API sigue abierta; cualquiera puede leer, modificar y borrar clientes. ZAP no lo marca como alerta, pero es el mayor riesgo restante.</li>
+    <li><b>Secretos:</b> sacar las contraseñas de <code>appsettings.json</code> (user secrets o variables de entorno) y cambiarlas si estuvieron en un repositorio público.</li>
+    <li><b>HSTS en producción:</b> mantenerlo activo con un <code>max-age</code> largo y un dominio real con HTTPS.</li>
+    <li><b>Repetir el escaneo activo</b> con la API estable y revisar el <code>zap.log</code> si persisten fallos de red.</li>
+    <li><b>Paquetes:</b> revisar vulnerabilidades con <code>dotnet list package --vulnerable --include-transitive</code>.</li>
+  </ul>
+
+  <footer>
+    Documento de comparación creado a partir de los informes de ZAP del 12 de octubre de 2026 (18:59 y 20:52). Proyecto ApiEmpresa.
+  </footer>
+
+</div>
+</body>
+</html>

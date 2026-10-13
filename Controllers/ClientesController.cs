@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using ApiEmpresa.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ApiEmpresa.Models;
 
 namespace ApiEmpresa.Controllers
 {
@@ -24,84 +19,66 @@ namespace ApiEmpresa.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Clientes>>> GetClientes()
         {
-            return await _context.Clientes.ToListAsync();
+            return await _context.Clientes.AsNoTracking().ToListAsync();
         }
 
         // GET: api/Clientes/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Clientes>> GetClientes(int id)
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Clientes>> GetCliente(int id)
         {
-            var clientes = await _context.Clientes.FindAsync(id);
-
-            if (clientes == null)
-            {
-                return NotFound();
-            }
-
-            return clientes;
-        }
-
-        // PUT: api/Clientes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutClientes(int id, Clientes clientes)
-        {
-            if (id != clientes.id_cliente)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(clientes).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ClientesExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            var cliente = await _context.Clientes.FindAsync(id);
+            if (cliente == null) return NotFound();
+            return cliente;
         }
 
         // POST: api/Clientes
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Clientes>> PostClientes(Clientes clientes)
+        public async Task<ActionResult<Clientes>> PostCliente(ClienteInputDto dto)
         {
-            _context.Clientes.Add(clientes);
+            var cliente = new Clientes();
+            Mapear(dto, cliente);
+
+            _context.Clientes.Add(cliente);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetClientes", new { id = clientes.id_cliente }, clientes);
+            return CreatedAtAction(nameof(GetCliente), new { id = cliente.id_cliente }, cliente);
         }
 
-        // DELETE: api/Clientes/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteClientes(int id)
+        // PUT: api/Clientes/5
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> PutCliente(int id, ClienteInputDto dto)
         {
-            var clientes = await _context.Clientes.FindAsync(id);
-            if (clientes == null)
-            {
-                return NotFound();
-            }
+            var cliente = await _context.Clientes.FindAsync(id);
+            if (cliente == null) return NotFound();
 
-            _context.Clientes.Remove(clientes);
+            Mapear(dto, cliente);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool ClientesExists(int id)
+        // DELETE: api/Clientes/5
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteCliente(int id)
         {
-            return _context.Clientes.Any(e => e.id_cliente == id);
+            var cliente = await _context.Clientes.FindAsync(id);
+            if (cliente == null) return NotFound();
+
+            _context.Clientes.Remove(cliente);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private static void Mapear(ClienteInputDto dto, Clientes cliente)
+        {
+            cliente.CUI = dto.CUI;
+            cliente.NIT = dto.NIT;
+            cliente.nombres = dto.nombres;
+            cliente.apellidos = dto.apellidos;
+            cliente.direccion = dto.direccion ?? string.Empty;
+            cliente.Telefono = dto.Telefono ?? string.Empty;
+            cliente.fecha_nacimiento = dto.fecha_nacimiento;
         }
     }
 }
